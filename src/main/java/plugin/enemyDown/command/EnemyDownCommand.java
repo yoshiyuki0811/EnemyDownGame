@@ -20,7 +20,7 @@ import org.checkerframework.checker.units.qual.C;
 import org.jetbrains.annotations.NotNull;
 import plugin.enemyDown.Main;
 
-public class EnemyDownCommand implements CommandExecutor, Listener {
+public class EnemyDownCommand implements CommandExecutor ,Listener{
 
  private Player player;
  private int  score;
@@ -28,6 +28,7 @@ public class EnemyDownCommand implements CommandExecutor, Listener {
   @Override
   public boolean onCommand(CommandSender sender, Command command, String label, String[] args) {
     if (sender instanceof Player player ) {
+      this.player = player ;
       World world = player.getWorld();
 
       //プレイヤーの状態を初期化する。（体力と空腹度を最大値にする。）
@@ -47,12 +48,14 @@ public class EnemyDownCommand implements CommandExecutor, Listener {
   @EventHandler
   public void onEnemyDeath(EntityDeathEvent e) {
     Player player = e.getEntity().getKiller();
+
     if (Objects.isNull(player)){
       return;
     }
     if (Objects.isNull(this.player)){
       return;
     }
+
     if (this.player.getName().equals(player.getName())){
       score += 10;
       player.sendMessage("敵を倒した！現在のスコアは" +score +"点！");

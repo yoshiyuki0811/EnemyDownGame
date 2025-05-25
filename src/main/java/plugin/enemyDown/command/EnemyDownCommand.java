@@ -1,5 +1,6 @@
 package plugin.enemyDown.command;
 
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Objects;
 import java.util.SplittableRandom;
@@ -18,19 +19,29 @@ import org.bukkit.inventory.ItemStack;
 import org.bukkit.inventory.PlayerInventory;
 import org.checkerframework.checker.units.qual.C;
 import org.jetbrains.annotations.NotNull;
+import plugin.enemyDown.Date.PlayerScore;
 import plugin.enemyDown.Main;
 
 public class EnemyDownCommand implements CommandExecutor ,Listener{
 
- private Player player;
- private int  score;
+
+  private List<PlayerScore> playerScoreList = new ArrayList<>();
+
 
   @Override
   public boolean onCommand(CommandSender sender, Command command, String label, String[] args) {
     if (sender instanceof Player player ) {
-      this.player = player ;
-      World world = player.getWorld();
+      if (playerScoreList.isEmpty()){
+        addNewPlayer(player);
 
+      }else{
+        for (PlayerScore playerScore : playerScoreList){
+          if (!playerScore.getPlayerName().equals(player.getName())){
+            addNewPlayer(player);
+          }
+        }
+      }
+      World world = player.getWorld();
       //プレイヤーの状態を初期化する。（体力と空腹度を最大値にする。）
       initPlayerStatus(player);
 
@@ -38,27 +49,33 @@ public class EnemyDownCommand implements CommandExecutor ,Listener{
     int random = new SplittableRandom().nextInt(2);
 
 
-      world.spawnEntity(getEnemySpawnLocation(player, world), enemyList.get(random));
 
-
+    world.spawnEntity(getEnemySpawnLocation(player, world), enemyList.get(random));
     }
     return false;
+  }/**
+   * 新規のプレイヤーを情報をリストに追加します。
+   * @param player　プレイヤー情報
+   *
+   */
+  private void addNewPlayer(Player player) {
+    PlayerScore newPlayer = new PlayerScore();
+    newPlayer.setPlayerName(player.getName());
+    playerScoreList.add(newPlayer);
   }
 
   @EventHandler
   public void onEnemyDeath(EntityDeathEvent e) {
     Player player = e.getEntity().getKiller();
 
-    if (Objects.isNull(player)){
+    if (Objects.isNull(player) || playerScoreList.isEmpty()) {
       return;
     }
-    if (Objects.isNull(this.player)){
-      return;
-    }
-
-    if (this.player.getName().equals(player.getName())){
-      score += 10;
-      player.sendMessage("敵を倒した！現在のスコアは" +score +"点！");
+    for (PlayerScore playerScore : playerScoreList){
+      if (playerScore.getPlayerName().equals(player.getName())){
+        playerScore.setScore(playerScore.getScore() +10);
+        player.sendMessage("敵を倒した！現在のスコアは" +playerScore.getScore() +"点！");
+      }
     }
   }
   /**
@@ -78,7 +95,6 @@ public class EnemyDownCommand implements CommandExecutor ,Listener{
     inventory.setBoots(new ItemStack(Material.NETHERITE_BOOTS));
     inventory.setItemInMainHand(new ItemStack(Material.NETHERITE_SWORD));
   }
-
   /**
    * 敵の出現エリアを取得します。
    * 出現エリアはX軸とZ軸の位置からプラス、ランダムで-１０～９の値が設定されます。
@@ -99,8 +115,4 @@ public class EnemyDownCommand implements CommandExecutor ,Listener{
 
     return new Location(world,x, y, z );
   }
-
-
-
-
 }

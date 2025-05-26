@@ -90,7 +90,6 @@ public class EnemyDownCommand implements CommandExecutor ,Listener{
       }
     }
   }
-
   /**
    * 現在実行しているプレイヤーんスコア情報を取得する。
    *
@@ -99,7 +98,7 @@ public class EnemyDownCommand implements CommandExecutor ,Listener{
    */
   private PlayerScore getPlayerScore(Player player) {
     if (playerScoreList.isEmpty()){
-      addNewPlayer(player);
+      return addNewPlayer(player);
     }else{
       for (PlayerScore playerScore : playerScoreList){
         if (!playerScore.getPlayerName().equals(player.getName())){

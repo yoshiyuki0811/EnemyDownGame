@@ -14,9 +14,7 @@ import org.bukkit.entity.Player;
 public class PlayerScore {
 
   private String playerName;
-
-
   private int  score;
-
+ private  int gameTime;
 
 }

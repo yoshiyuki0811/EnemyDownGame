@@ -4,6 +4,7 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Objects;
 import java.util.SplittableRandom;
+import org.bukkit.Bukkit;
 import org.bukkit.Location;
 import org.bukkit.Material;
 import org.bukkit.World;
@@ -17,15 +18,19 @@ import org.bukkit.event.Listener;
 import org.bukkit.event.entity.EntityDeathEvent;
 import org.bukkit.inventory.ItemStack;
 import org.bukkit.inventory.PlayerInventory;
-import org.checkerframework.checker.units.qual.C;
-import org.jetbrains.annotations.NotNull;
 import plugin.enemyDown.Date.PlayerScore;
 import plugin.enemyDown.Main;
 
+
 public class EnemyDownCommand implements CommandExecutor ,Listener{
 
-
+  private Main main;
   private List<PlayerScore> playerScoreList = new ArrayList<>();
+  private int gameTime = 20;
+
+  public EnemyDownCommand(Main main) {
+    this.main = main;
+  }
 
 
   @Override
@@ -33,7 +38,6 @@ public class EnemyDownCommand implements CommandExecutor ,Listener{
     if (sender instanceof Player player ) {
       if (playerScoreList.isEmpty()){
         addNewPlayer(player);
-
       }else{
         for (PlayerScore playerScore : playerScoreList){
           if (!playerScore.getPlayerName().equals(player.getName())){
@@ -41,19 +45,25 @@ public class EnemyDownCommand implements CommandExecutor ,Listener{
           }
         }
       }
+      gameTime = 20;
       World world = player.getWorld();
-      //プレイヤーの状態を初期化する。（体力と空腹度を最大値にする。）
+      //プレイヤーの状態を初期化する。（体力と空腹度を最大値にする。）mat
       initPlayerStatus(player);
+      Bukkit.getScheduler().runTaskTimer(main, Runnable ->{
+        if (gameTime<= 0){
+          Runnable.cancel();
+          player.sendMessage("ゲームが終了しました。");
+          return;
+        }
 
-      List<EntityType> enemyList = List.of(EntityType.ZOMBIE,EntityType.SKELETON);
-    int random = new SplittableRandom().nextInt(2);
+        world.spawnEntity(getEnemySpawnLocation(player, world), getEnemy());
+        gameTime -=5;
+      },0,5 * 20);
 
-
-
-    world.spawnEntity(getEnemySpawnLocation(player, world), enemyList.get(random));
     }
     return false;
-  }/**
+  }
+  /**
    * 新規のプレイヤーを情報をリストに追加します。
    * @param player　プレイヤー情報
    *
@@ -114,5 +124,13 @@ public class EnemyDownCommand implements CommandExecutor ,Listener{
     double z = playerlocation.getZ()+randomZ;
 
     return new Location(world,x, y, z );
+  }
+  /**
+   * ランダムで敵を抽出して、その結果の敵を取得します。
+   * return　敵
+   */
+  private  EntityType getEnemy() {
+    List<EntityType> enemyList = List.of(EntityType.ZOMBIE,EntityType.SKELETON);
+    return enemyList.get(new SplittableRandom().nextInt(2));
   }
 }

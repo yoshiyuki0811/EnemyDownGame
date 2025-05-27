@@ -18,7 +18,7 @@ public abstract class BaseCommand implements CommandExecutor {
 
        return onExecutePlayerCommand(player);
   }else{
-      return onExecuteNPCPlayerCommand(sender);
+      return onExecuteNPCCommand(sender);
     }
   }
 
@@ -35,7 +35,7 @@ public abstract class BaseCommand implements CommandExecutor {
    * @param sender　コマンド実行者
    * @return　処理の実行
    */
-  public abstract boolean onExecuteNPCPlayerCommand(CommandSender sender);
-
   public abstract boolean onExecuteNPCCommand(CommandSender sender);
+
+
 }

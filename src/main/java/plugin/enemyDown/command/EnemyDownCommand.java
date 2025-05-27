@@ -11,7 +11,10 @@ import org.bukkit.World;
 import org.bukkit.command.Command;
 import org.bukkit.command.CommandExecutor;
 import org.bukkit.command.CommandSender;
+import org.bukkit.entity.Enemy;
+import org.bukkit.entity.Entity;
 import org.bukkit.entity.EntityType;
+import org.bukkit.entity.LivingEntity;
 import org.bukkit.entity.Player;
 import org.bukkit.event.EventHandler;
 import org.bukkit.event.Listener;
@@ -22,7 +25,7 @@ import plugin.enemyDown.Date.PlayerScore;
 import plugin.enemyDown.Main;
 
 
-public class EnemyDownCommand implements CommandExecutor ,Listener{
+public class EnemyDownCommand extends BaseCommand implements Listener {
 
   private Main main;
   private List<PlayerScore> playerScoreList = new ArrayList<>();
@@ -30,6 +33,21 @@ public class EnemyDownCommand implements CommandExecutor ,Listener{
 
   public EnemyDownCommand(Main main) {
     this.main = main;
+  }
+  @Override
+  public boolean onExecutePlayerCommand(Player player) {
+    return false;
+  }
+
+  @Override
+  public boolean onExecuteNPCPlayerCommand(CommandSender sender) {
+
+    return false;
+  }
+
+  @Override
+  public boolean onExecuteNPCCommand(CommandSender sender) {
+    return false;
   }
 
 
@@ -49,8 +67,14 @@ public class EnemyDownCommand implements CommandExecutor ,Listener{
           Runnable.cancel();
           player.sendTitle("ゲームが終了しました。",
               nowPlayer.getPlayerName() + "合計"+nowPlayer.getScore() +"点！",
-              0,30,0);
+              0,60,0);
           nowPlayer.setScore(0);
+          List<Entity> nearbyEnemies = player.getNearbyEntities(50, 0, 50);
+          for (Entity enemy : nearbyEnemies){
+            switch (enemy.getType()) {
+              case ZOMBIE, SKELETON, WITCH -> enemy.remove();
+            }
+          }
           return;
         }
 
@@ -61,6 +85,7 @@ public class EnemyDownCommand implements CommandExecutor ,Listener{
     }
     return false;
   }
+
 
 
 
@@ -78,14 +103,25 @@ public class EnemyDownCommand implements CommandExecutor ,Listener{
 
   @EventHandler
   public void onEnemyDeath(EntityDeathEvent e) {
-    Player player = e.getEntity().getKiller();
+    LivingEntity enemy = e.getEntity();
+    Player player = enemy.getKiller();
 
     if (Objects.isNull(player) || playerScoreList.isEmpty()) {
       return;
     }
     for (PlayerScore playerScore : playerScoreList){
       if (playerScore.getPlayerName().equals(player.getName())){
-        playerScore.setScore(playerScore.getScore() +10);
+        int point = switch (enemy.getType()) {
+          case ZOMBIE -> 10;
+          case SKELETON, WITCH -> 20;
+          default -> 0;
+        };
+
+        playerScore.setScore(playerScore.getScore() + point);
+
+
+
+
         player.sendMessage("敵を倒した！現在のスコアは" +playerScore.getScore() +"点！");
       }
     }
@@ -152,7 +188,7 @@ public class EnemyDownCommand implements CommandExecutor ,Listener{
    * return　敵
    */
   private  EntityType getEnemy() {
-    List<EntityType> enemyList = List.of(EntityType.ZOMBIE,EntityType.SKELETON);
-    return enemyList.get(new SplittableRandom().nextInt(2));
+    List<EntityType> enemyList = List.of(EntityType.ZOMBIE,EntityType.SKELETON,EntityType.WITCH);
+    return enemyList.get(new SplittableRandom().nextInt(enemyList.size()));
   }
 }

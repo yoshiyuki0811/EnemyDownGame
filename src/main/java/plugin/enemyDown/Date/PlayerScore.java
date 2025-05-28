@@ -17,4 +17,7 @@ public class PlayerScore {
   private int  score;
  private  int gameTime;
 
+  public PlayerScore(String PlayerName) {
+    this.playerName = PlayerName;
+  }
 }

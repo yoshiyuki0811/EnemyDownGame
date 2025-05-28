@@ -7,9 +7,14 @@ import org.bukkit.command.CommandSender;
 import org.bukkit.entity.EntityType;
 import org.bukkit.entity.Player;
 import org.bukkit.event.Listener;
+import plugin.enemyDown.Main;
 import plugin.enemyDown.command.BaseCommand;
 
 public class EnemySpawnCommand extends BaseCommand implements Listener {
+
+  public EnemySpawnCommand(Main main) {
+
+  }
 
   @Override
 public boolean onExecutePlayerCommand(Player player) {

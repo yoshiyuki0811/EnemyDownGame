@@ -7,11 +7,7 @@ import java.util.SplittableRandom;
 import org.bukkit.Bukkit;
 import org.bukkit.Location;
 import org.bukkit.Material;
-import org.bukkit.World;
-import org.bukkit.command.Command;
-import org.bukkit.command.CommandExecutor;
 import org.bukkit.command.CommandSender;
-import org.bukkit.entity.Enemy;
 import org.bukkit.entity.Entity;
 import org.bukkit.entity.EntityType;
 import org.bukkit.entity.LivingEntity;
@@ -24,11 +20,18 @@ import org.bukkit.inventory.PlayerInventory;
 import plugin.enemyDown.Date.PlayerScore;
 import plugin.enemyDown.Main;
 
-
+/**
+ * 制限時間内にランダムで出現する敵をたおして、スコアを取得するゲームを起動するコマンド
+ * スコアはてきによって変わり、倒せた敵の合計によってスコアが変動します。
+ * 結果がプレイヤー名、点数、日時等で保存されます。
+ */
 public class EnemyDownCommand extends BaseCommand implements Listener {
 
+  public static final int GAME_TIME = 20;
+  
   private Main main;
   private List<PlayerScore> playerScoreList = new ArrayList<>();
+  private List<Entity> spawnEntityList = new ArrayList<>();
 
 
   public EnemyDownCommand(Main main) {
@@ -36,36 +39,15 @@ public class EnemyDownCommand extends BaseCommand implements Listener {
   }
   @Override
   public boolean onExecutePlayerCommand(Player player) {
-    PlayerScore nowPlayer =getPlayerScore(player);
-    nowPlayer.setGameTime(20);
-
-    World world = player.getWorld();
-
-    //プレイヤーの状態を初期化する。（体力と空腹度を最大値にする。）mat
+    PlayerScore nowPlayerScore =getPlayerScore(player);
+    
     initPlayerStatus(player);
 
-    Bukkit.getScheduler().runTaskTimer(main, Runnable ->{
-      if (nowPlayer.getGameTime()<= 0){
-        Runnable.cancel();
-        player.sendTitle("ゲームが終了しました。",
-            nowPlayer.getPlayerName() + "合計"+nowPlayer.getScore() +"点！",
-            0,60,0);
-        nowPlayer.setScore(0);
-        List<Entity> nearbyEnemies = player.getNearbyEntities(50, 0, 50);
-        for (Entity enemy : nearbyEnemies){
-          switch (enemy.getType()) {
-            case ZOMBIE, SKELETON, WITCH -> enemy.remove();
-          }
-        }
-        return;
-      }
-
-      world.spawnEntity(getEnemySpawnLocation(player, world), getEnemy());
-      nowPlayer.setGameTime(nowPlayer.getGameTime() -5);
-    },0,5 * 20);
-
+    gamePlay(player, nowPlayerScore);
     return true;
   }
+
+  
 
   @Override
   public boolean onExecuteNPCCommand(CommandSender sender) {
@@ -78,8 +60,7 @@ public class EnemyDownCommand extends BaseCommand implements Listener {
    * @return 新規プレイヤー
    */
   private PlayerScore addNewPlayer(Player player) {
-    PlayerScore newPlayer = new PlayerScore();
-    newPlayer.setPlayerName(player.getName());
+    PlayerScore newPlayer = new PlayerScore(player.getName());
     playerScoreList.add(newPlayer);
     return newPlayer;
   }
@@ -102,9 +83,6 @@ public class EnemyDownCommand extends BaseCommand implements Listener {
 
         playerScore.setScore(playerScore.getScore() + point);
 
-
-
-
         player.sendMessage("敵を倒した！現在のスコアは" +playerScore.getScore() +"点！");
       }
     }
@@ -116,18 +94,20 @@ public class EnemyDownCommand extends BaseCommand implements Listener {
    * return　現在実行しているプレイヤーのスコア情報
    */
   private PlayerScore getPlayerScore(Player player) {
+    PlayerScore playerScore = new PlayerScore(player.getName());
+
     if (playerScoreList.isEmpty()){
-      return addNewPlayer(player);
+      playerScore  = addNewPlayer(player);
     }else{
-      for (PlayerScore playerScore : playerScoreList){
-        if (!playerScore.getPlayerName().equals(player.getName())){
-         return addNewPlayer(player);
-        }else {
-          return playerScore;
-        }
-      }
+      playerScore = playerScoreList.stream().findFirst().map(ps
+          -> ps.getPlayerName().equals(player.getName())
+          ? ps
+          : addNewPlayer(player)).orElse(playerScore);
+      playerScore.setGameTime(GAME_TIME);
     }
-    return null;
+    playerScore.setGameTime(GAME_TIME);
+    playerScore.setScore(0);
+    return playerScore;
   }
   /**
    * ゲームを始める前にプレイヤーの状態を設定する。
@@ -146,16 +126,40 @@ public class EnemyDownCommand extends BaseCommand implements Listener {
     inventory.setBoots(new ItemStack(Material.NETHERITE_BOOTS));
     inventory.setItemInMainHand(new ItemStack(Material.NETHERITE_SWORD));
   }
+
+  /**
+   * ゲームを実行します。規定の時間内に敵を倒すとスコアが加算されます。合計スコアを時間経過後に表示します。
+   * @param player　コマンドを実行したプレイヤー
+   * @param nowPlayerScore　プレイヤーのスコア情報
+   */
+  private void gamePlay(Player player, PlayerScore nowPlayerScore) {
+    Bukkit.getScheduler().runTaskTimer(main, Runnable ->{
+      if (nowPlayerScore.getGameTime()<= 0){
+        Runnable.cancel();
+
+        player.sendTitle("ゲームが終了しました。",
+            nowPlayerScore.getPlayerName() + "合計"+ nowPlayerScore.getScore() +"点！",
+            0,60,0);
+
+        spawnEntityList.forEach(Entity::remove);
+        return;
+      }
+
+      Entity spawnEntity = player.getWorld().spawnEntity(getEnemySpawnLocation(player), getEnemy());
+      spawnEntityList.add(spawnEntity);
+      nowPlayerScore.setGameTime(nowPlayerScore.getGameTime() -5);
+    },0,5 * 20);
+  }
   /**
    * 敵の出現エリアを取得します。
    * 出現エリアはX軸とZ軸の位置からプラス、ランダムで-１０～９の値が設定されます。
    *
    * @param player　コマンドを実行したプレイヤー
-   * @param world　コマンドを実行したプレイヤーの所属するワールド
+   * @param 　コマンドを実行したプレイヤーの所属するワールド
    *
    *
    */
-  private Location getEnemySpawnLocation(Player player, World world) {
+  private Location getEnemySpawnLocation(Player player) {
     Location playerlocation = player.getLocation();
     int randomX = new SplittableRandom().nextInt(20)-10;
     int randomZ = new SplittableRandom().nextInt(20)-10;
@@ -164,7 +168,7 @@ public class EnemyDownCommand extends BaseCommand implements Listener {
     double y = playerlocation.getY();
     double z = playerlocation.getZ()+randomZ;
 
-    return new Location(world,x, y, z );
+    return new Location(player.getWorld(),x, y, z );
   }
   /**
    * ランダムで敵を抽出して、その結果の敵を取得します。

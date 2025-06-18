@@ -16,26 +16,29 @@ public abstract class BaseCommand implements CommandExecutor {
     if (sender instanceof Player player ) {
 
 
-       return onExecutePlayerCommand(player);
+       return onExecutePlayerCommand(player, command ,label ,args);
   }else{
-      return onExecuteNPCCommand(sender);
+      return onExecuteNPCCommand(sender, command ,label ,args);
     }
   }
 
   /**
    *コマンド実行者がプレイヤーだった時に実行します。
    * @param player　コマンドを実行したプレイヤー
-   * @return　処理の実行の有無
+   * @param   command コマンド
+   * @param label ラベル
+   * @param args コマンド引き数
+   * @return 処理の実行の有無
    */
-  public abstract boolean  onExecutePlayerCommand(Player player);
+  public abstract boolean  onExecutePlayerCommand(Player player, @NotNull Command command, @NotNull String label, @NotNull String[] args);
 
   /**
    * コマンド実行者がプレイヤーだった場合に実行します。
    *
    * @param sender　コマンド実行者
-   * @return　処理の実行
+   * @return 処理の実行
    */
-  public abstract boolean onExecuteNPCCommand(CommandSender sender);
+  public abstract boolean onExecuteNPCCommand(CommandSender sender, @NotNull Command command, @NotNull String label, @NotNull String[] args);
 
 
 }

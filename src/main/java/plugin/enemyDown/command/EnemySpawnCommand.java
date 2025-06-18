@@ -3,10 +3,12 @@ package plugin.enemyDown.command;
 import java.util.List;
 import java.util.SplittableRandom;
 import org.bukkit.Location;
+import org.bukkit.command.Command;
 import org.bukkit.command.CommandSender;
 import org.bukkit.entity.EntityType;
 import org.bukkit.entity.Player;
 import org.bukkit.event.Listener;
+import org.jetbrains.annotations.NotNull;
 import plugin.enemyDown.Main;
 import plugin.enemyDown.command.BaseCommand;
 
@@ -17,13 +19,13 @@ public class EnemySpawnCommand extends BaseCommand implements Listener {
   }
 
   @Override
-public boolean onExecutePlayerCommand(Player player) {
+public boolean onExecutePlayerCommand(Player player, @NotNull Command command, @NotNull String label, @NotNull String[] args) {
     player.getWorld().spawnEntity(getEnemySpawnLocation(player), getEnemy());
     return true;
   }
 
   @Override
-  public boolean onExecuteNPCCommand(CommandSender sender) {
+  public boolean onExecuteNPCCommand(CommandSender sender, @NotNull Command command, @NotNull String label, @NotNull String[] args) {
     return false;
   }
 

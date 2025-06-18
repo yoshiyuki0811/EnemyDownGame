@@ -1,10 +1,8 @@
 package plugin.enemyDown.command;
 
-import java.io.IOException;
 import java.io.InputStream;
 import java.sql.Connection;
 import java.sql.DriverManager;
-import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.sql.Statement;
 import java.time.LocalDateTime;
@@ -34,7 +32,7 @@ import org.bukkit.inventory.ItemStack;
 import org.bukkit.inventory.PlayerInventory;
 import org.bukkit.potion.PotionEffect;
 import org.jetbrains.annotations.NotNull;
-import plugin.enemyDown.Date.ExecutingPlayer;
+import plugin.enemyDown.date.ExecutingPlayer;
 import plugin.enemyDown.Main;
 import plugin.enemyDown.mapper.PlayerScoreMapper;
 import plugin.enemyDown.mapper.data.PlayerScore;
@@ -66,8 +64,8 @@ public class EnemyDownCommand extends BaseCommand implements Listener {
 
     try {
       InputStream inputStream = Resources.getResourceAsStream("mybatis-config.xml");
-      SqlSessionFactory sqlSessionFactory = new SqlSessionFactoryBuilder().build(inputStream);
-    } catch (IOException e) {
+      this.sqlSessionFactory = new SqlSessionFactoryBuilder().build(inputStream);
+    } catch (Exception e) {
       throw new RuntimeException(e);
     }
 
@@ -79,9 +77,9 @@ public class EnemyDownCommand extends BaseCommand implements Listener {
         PlayerScoreMapper mapper = session.getMapper(PlayerScoreMapper.class);
         List<PlayerScore> playerScoreList = mapper.selectList();
 
-        DateTimeFormatter formatter = DateTimeFormatter.ofPattern("yyyy-MM-dd日 HH:mm:ss");
+        DateTimeFormatter formatter = DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss");
         for (PlayerScore playerScore : playerScoreList){
-          LocalDateTime date = LocalDateTime.parse(playerScore.getRegistered_at(), formatter);
+          LocalDateTime date = LocalDateTime.parse(playerScore.getRegisteredAT(), formatter);
 
           player.sendMessage(
               playerScore.getId()+ " : "

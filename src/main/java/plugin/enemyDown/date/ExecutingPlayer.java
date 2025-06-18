@@ -1,4 +1,4 @@
-package plugin.enemyDown.Date;
+package plugin.enemyDown.date;
 
 import lombok.Getter;
 import lombok.Setter;

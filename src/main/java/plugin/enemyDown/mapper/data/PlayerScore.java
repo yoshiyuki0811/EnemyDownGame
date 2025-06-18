@@ -16,7 +16,7 @@ public class PlayerScore {
   private String playerName;
   private int score ;
   private String difficulty;
-  private String registered_at;
+  private String registeredAT;
 
 
 }

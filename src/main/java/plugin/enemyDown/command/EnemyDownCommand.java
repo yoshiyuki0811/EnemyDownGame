@@ -1,20 +1,10 @@
 package plugin.enemyDown.command;
 
-import java.io.InputStream;
-import java.sql.Connection;
-import java.sql.DriverManager;
-import java.sql.SQLException;
-import java.sql.Statement;
-import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Objects;
 import java.util.SplittableRandom;
-import org.apache.ibatis.io.Resources;
-import org.apache.ibatis.session.SqlSession;
-import org.apache.ibatis.session.SqlSessionFactory;
-import org.apache.ibatis.session.SqlSessionFactoryBuilder;
 import org.bukkit.Bukkit;
 import org.bukkit.ChatColor;
 import org.bukkit.Location;
@@ -32,9 +22,9 @@ import org.bukkit.inventory.ItemStack;
 import org.bukkit.inventory.PlayerInventory;
 import org.bukkit.potion.PotionEffect;
 import org.jetbrains.annotations.NotNull;
+import plugin.enemyDown.PlayerScoreData;
 import plugin.enemyDown.date.ExecutingPlayer;
 import plugin.enemyDown.Main;
-import plugin.enemyDown.mapper.PlayerScoreMapper;
 import plugin.enemyDown.mapper.data.PlayerScore;
 
 /**
@@ -52,41 +42,27 @@ public class EnemyDownCommand extends BaseCommand implements Listener {
   public static final String NONE = "none";
   public static final String LIST= "list";
 
-  private Main main;
-  private List<ExecutingPlayer> executingPlayerList = new ArrayList<>();
-  private List<Entity> spawnEntityList = new ArrayList<>();
+  private final Main main;
 
-  private  SqlSessionFactory sqlSessionFactory;
+  private final PlayerScoreData playerScoreData =new PlayerScoreData();
+
+
+  private final List<ExecutingPlayer> executingPlayerList = new ArrayList<>();
+  private final List<Entity> spawnEntityList = new ArrayList<>();
+
+
 
   public EnemyDownCommand(Main main) {
 
     this.main= main;
 
-    try {
-      InputStream inputStream = Resources.getResourceAsStream("mybatis-config.xml");
-      this.sqlSessionFactory = new SqlSessionFactoryBuilder().build(inputStream);
-    } catch (Exception e) {
-      throw new RuntimeException(e);
-    }
-
   }
   @Override
   public boolean onExecutePlayerCommand(Player player, @NotNull Command command, @NotNull String label, @NotNull String[] args) {
-    if (args.length ==1  && LIST.equals(args[0])) {String resource = "org/mybatis/example/mybatis-config.xml.xml";
-      try(SqlSession session =sqlSessionFactory.openSession()){
-        PlayerScoreMapper mapper = session.getMapper(PlayerScoreMapper.class);
-        List<PlayerScore> playerScoreList = mapper.selectList();
+    if (args.length ==1  && LIST.equals(args[0])) {
+      sendPlayerScoreList(player);
 
-        for (PlayerScore playerScore : playerScoreList){
-          player.sendMessage(playerScore.getId()+ " : "
-              + playerScore.getPlayerName() + " : "
-              + playerScore.getScore() + " : "
-              + playerScore.getDifficulty() + " : "
-              + playerScore.getRegisteredAT().format(DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss")));
-        }
-      }
-
-        return false;
+      return false;
       }
     String difficulty = getDifficulty(player, args);
 if (difficulty.equals(NONE)){
@@ -130,6 +106,22 @@ if (difficulty.equals(NONE)){
     ExecutingPlayer newPlayer = new ExecutingPlayer(player.getName());
     executingPlayerList.add(newPlayer);
     return newPlayer;
+  }
+  /**
+   * 現在登録されているスコアの一覧をメッセージに送る。
+   *
+   * @param player　プレイヤー
+   */
+
+  private void sendPlayerScoreList(Player player) {
+    List<PlayerScore> playerScoreList = playerScoreData.selectList();
+    for (PlayerScore playerScore : playerScoreList) {
+      player.sendMessage(playerScore.getId() + " : "
+          + playerScore.getPlayerName() + " : "
+          + playerScore.getScore() + " : "
+          + playerScore.getDifficulty() + " : "
+          + playerScore.getRegisteredAT().format(DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss")));
+    }
   }
 
   @EventHandler
@@ -240,16 +232,11 @@ if (difficulty.equals(NONE)){
 
 
         removePotionEffect(player);
-        //スコア登録処理
-        try(SqlSession session =sqlSessionFactory.openSession(true)){
-          PlayerScoreMapper mapper = session.getMapper(PlayerScoreMapper.class);
-          mapper.insert(
-              new PlayerScore(nowExecutingPlayer.getPlayerName()
-                  , nowExecutingPlayer.getScore()
-                  ,difficulty));
-        }
 
-
+        playerScoreData.insert(
+            new PlayerScore(nowExecutingPlayer.getPlayerName()
+            , nowExecutingPlayer.getScore()
+            ,difficulty));
 
         return;
       }

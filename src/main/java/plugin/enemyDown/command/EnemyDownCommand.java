@@ -83,7 +83,7 @@ if (difficulty.equals(NONE)){
    * @param args　コマンド引数
    * @return 難易度
    */
-  private @NotNull String getDifficulty(Player player, @NotNull String[] args) {
+  private String getDifficulty(Player player,String[] args) {
     if (args.length ==1  && (EASY.equals(args[0]) || NORMAL.equals(args[0]) ||HARD.equals(args[0]))) {
      return args[0];
     }
@@ -203,28 +203,6 @@ if (difficulty.equals(NONE)){
         player.sendTitle("ゲームが終了しました。",
             nowExecutingPlayer.getPlayerName() + "合計"+ nowExecutingPlayer.getScore() +"点！",
             0,60,0);
-
-
-
-
-//        try (Connection con = DriverManager.getConnection(
-//            "jdbc:mysql://localhost:3306/spigot_sever",
-//            "root"
-//            , "mezase0811");
-//          Statement statement = con.createStatement()){
-//
-//          statement.executeUpdate(
-//              "insert player_score(player_name , score , difficulty ,registered_at) "
-//              +"values('"+ nowExecutingPlayer.getPlayerName()+"'," + nowExecutingPlayer.getScore() + ",'"
-//                  + difficulty +"', now());" );
-//
-//
-//        } catch (SQLException e) {
-//          e.printStackTrace();
-//        }
-
-
-
 
 
         spawnEntityList.forEach(Entity::remove);
